@@ -15,10 +15,15 @@ $child_task_process = array();
 if (is_array($config['task_list']) && !empty($config['task_list'])) {
     foreach ($config['task_list'] as $task) {
         $proc_exist = false;
-        if (trim(exec('ps -ef|grep -E ' . $task['path'] . '|grep -v grep')) != '') {
-            echo "进程 " . $task['path'] . " 已存在\r\n";
-            $proc_exist = true;
-            continue;
+        if (trim(exec("ps -ef|grep -E " . $task['path'] . "|grep -v grep")) != '') {
+            // 判断进程是否为僵尸进程
+            if (exec("ps -ef|grep -E " . $task['path'] . "|grep defunct|grep -v grep|wc -l") > 0) {
+                exec("ps -ef|grep -E " . $task['path'] . "|grep defunct|grep -v grep|awk'{print \"kill -9 \"$2, $3}'");
+            } else {
+                echo "进程 " . $task['path'] . " 已存在\r\n";
+                $proc_exist = true;
+                continue;
+            }
         }
 
         $child_pid = pcntl_fork();
